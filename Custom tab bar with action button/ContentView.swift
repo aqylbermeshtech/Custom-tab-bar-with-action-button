@@ -41,19 +41,41 @@ struct ContentView: View {
             GlassEffectContainer(spacing: 10) {
                 HStack(spacing: 10) {
                     GeometryReader {
-                        CustomTabBar(size: $0.size, activeTab: $activeTab) { tab in
-                            VStack(spacing: 3) {
-                                Image(systemName: tab.symbol)
-                                    .font(.title)
-                                
-                                Text(tab.rawValue)
-                                    .font(.system(size: 10))
-                                    .fontWeight(.medium)
+//                        CustomTabBar(size: $0.size, activeTab: $activeTab) { tab in
+//                            VStack(spacing: 3) {
+//                                Image(systemName: tab.symbol)
+//                                    .font(.title)
+//                                
+//                                Text(tab.rawValue)
+//                                    .font(.system(size: 10))
+//                                    .fontWeight(.medium)
+//                            }
+//                            .symbolVariant(.fill)
+//                            .frame(maxWidth: .infinity)
+//                        }
+//                        .glassEffect(.regular.interactive(), in:.capsule)
+                        
+                        ///Type 2
+                        CustomTabBar2(size: $0.size, activeTab: $activeTab)
+                            .overlay {
+                                HStack(spacing: 0) {
+                                    ForEach(CustomTab.allCases, id: \.rawValue) { tab in
+                                        VStack(spacing: 3) {
+                                            Image(systemName: tab.symbol)
+                                                .font(.title3)
+                                            
+                                            Text(tab.rawValue)
+                                                .font(.system(size: 10))
+                                                .fontWeight(.medium)
+                                        }
+                                        .symbolVariant(.fill)
+                                        .foregroundStyle(activeTab == tab ? .blue : .primary)
+                                        .frame(maxWidth: .infinity)
+                                    }
+                                }
+                                .animation(.easeInOut(duration: 0.25), value: activeTab)
                             }
-                            .symbolVariant(.fill)
-                            .frame(maxWidth: .infinity)
-                        }
-                        .glassEffect(.regular.interactive(), in:.capsule)
+                            .glassEffect(.regular.interactive(), in: .capsule)
                     }
                     ZStack {
                         ForEach(CustomTab.allCases, id: \.rawValue) { tab in
