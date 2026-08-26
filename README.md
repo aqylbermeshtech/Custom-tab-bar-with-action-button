@@ -1,4 +1,13 @@
+
+<div align="center">
+
 # Custom Tab Bar with Action Button
+<img width="460" height="416" alt="Screen Recording 2026-08-26 at 10 37 29" src="https://github.com/user-attachments/assets/ec269600-effd-4a8f-afcc-172f72375895" />
+
+
+</div>
+
+
 
 A small SwiftUI experiment: a custom, capsule-shaped tab bar built on top of `UISegmentedControl` and wrapped in iOS 26's Liquid Glass (`glassEffect`), paired with a floating "action button" whose icon morphs to match the currently selected tab.
 
