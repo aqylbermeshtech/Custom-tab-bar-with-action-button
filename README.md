@@ -17,6 +17,7 @@ A small SwiftUI experiment: a custom, capsule-shaped tab bar built on top of `UI
 - Rendering each segment's SwiftUI icon/label to a `UIImage` and setting it as the segment's image directly (see [Implementation](#implementation) below)
 - Applying `GlassEffectContainer` / `.glassEffect(.regular.interactive(), in:)` (iOS 26 Liquid Glass API) to both the tab bar and the action button so they visually merge into one floating pill
 - An action button that cross-fades/blurs between per-tab SF Symbols (`blurFade` view modifier) driven by the active tab, animated with `.smooth`
+- Tabs with one obvious primary action (Home, Notifications) get a plain `Button`; a tab with several (Settings) morphs the icon to `ellipsis` and becomes a `Menu` instead — see `CustomTab.hasSingleAction` in [ContentView.swift](Custom%20tab%20bar%20with%20action%20button/ContentView.swift)
 
 ## Implementation
 
@@ -55,4 +56,6 @@ Select a simulator or device running iOS 26.1+ and run (`Cmd+R`), or use the `#P
 ## Notes
 
 - `CustomTab` currently defines three tabs (Home, Notifications, Settings), each with its own bar icon (`symbol`) and action-button icon (`actionSymbol`); add/remove cases there to change the tab set.
+- `CustomTab.hasSingleAction` decides `Button` vs. `Menu` for the action button; the menu items in `ContentView` (Appearance, Notifications, Privacy, About) are placeholders — swap in real actions per tab.
+- Home and Notifications' `Button` action is a `print` placeholder — wire in real behavior there too.
 - This is a UI experiment/reference implementation, not a full app — there's no navigation behind the tabs yet, just the selector and action button.
