@@ -10,28 +10,59 @@
 
 </div>
 
-A small SwiftUI experiment exploring two variations of a custom, capsule-shaped tab bar built on top of `UISegmentedControl` and wrapped in iOS 26's Liquid Glass (`glassEffect`):
+A modern, fluid SwiftUI tab bar: a custom capsule-shaped bar built in **pure SwiftUI** with `@Namespace` and `.matchedGeometryEffect` driving a native **`TabView`**, styled with iOS 26 Liquid Glass (`glassEffect`), and paired with an interactive morphing action button.
 
-1. **Expanding 4th Tab Variant:** Shows a 3-tab bar paired with a standalone `+` action button on the **Home** tab. Switching to **Notifications** or **Settings** pushes the action button out and expands the tab bar to reveal a 4th **Profile** tab.
-2. **Persistent Action Button Variant:** Keeps a 3-tab bar alongside a floating action button whose icon cross-fades/blurs (`blurFade`) to match the currently selected tab, switching between a single tap action and a contextual popover menu.
+---
 
-## What it demonstrates
+## Highlights
 
-- Wrapping `UISegmentedControl` in `UIViewRepresentable` to get a native, hardware-accelerated sliding selection indicator instead of hand-rolling one in SwiftUI
-- Dynamically inserting and removing segments (`insertSegment` / `removeSegment`) at runtime while preserving the active selection pill and hiding default segment background dividers
-- Rendering each segment's SwiftUI icon/label to a `UIImage` via `ImageRenderer` and setting it as the segment's image directly (see [Implementation](#implementation) below)
-- Applying `GlassEffectContainer` / `.glassEffect(.regular.interactive(), in: .capsule)` (iOS 26 Liquid Glass API) to both the tab bar and the action button so they smoothly merge and split
-- Two action button behaviors:
-  - **Dynamic Tab Expansion:** Conditional action button visibility (`showsActionButton`) that transitions out as the 4th `.profile` tab slides into the segmented control
-  - **Contextual Icon Morphing:** Cross-fading/blurring between per-tab SF Symbols (`blurFade` view modifier) and presenting a `.popover` menu on the Settings tab
+- **Native `TabView` Foundation:** Real view lifecycle management, view preservation, and independent `NavigationStack` per tab with the system tab bar cleanly hidden.
+- **Hardware-Accelerated Sliding Indicator:** Pure SwiftUI `@Namespace` and `.matchedGeometryEffect` replicate the native sliding pill feel without UIKit bridging.
+- **Fluid Morphing Layout:** The tab bar dynamically expands and contracts between 3 and 4 tabs (`.profile` entering/exiting smoothly), while the floating action button slides in and out alongside it.
+- **Vector Crispness & Micro-Animations:** Native SF Symbols with bouncing micro-animations (`.symbolEffect(.bounce)`), adaptive tinting, and full Dynamic Type scaling on 2x/3x Super Retina displays.
+- **Liquid Glass Integration:** Leverages iOS 26 `GlassEffectContainer` and `.glassEffect(.regular.interactive(), in: .capsule)` so the tab bar and action button merge visually into unified floating glass elements.
+- **VoiceOver & Accessibility:** Emits proper tab accessibility traits (`.tabBar`, `.isSelected`) and combined accessibility elements.
 
-## Implementation
+---
 
-**[MorphingTabBar.swift](Custom%20tab%20bar%20with%20action%20button/Views/Components/MorphingTabBar.swift)** is the tab bar used by [ContentView.swift](Custom%20tab%20bar%20with%20action%20button/Views/ContentView.swift). It renders each tab's SwiftUI icon/label to a `UIImage` via `ImageRenderer` and sets it as the segment's image, hides the control's built-in background/divider `UIImageView`s while tagging the selection pill to keep it visible, and dynamically inserts or removes the 4th **Profile** segment with fluid animations.
+## Transition: From `UISegmentedControl` to Native `TabView`
 
-Earlier prototype implementations and variants are kept for reference under [Legacy/](Custom%20tab%20bar%20with%20action%20button/Legacy/):
-- **[LegacyCustomTabBar.swift](Custom%20tab%20bar%20with%20action%20button/Legacy/LegacyCustomTabBar.swift)**: Earlier 3-tab image-rendered prototype with the persistent morphing action button.
-- **[LegacyOverlayTabBar.swift](Custom%20tab%20bar%20with%20action%20button/Legacy/LegacyOverlayTabBar.swift)**: Segmented control with SwiftUI overlay labels.
+Earlier versions of this project used a bridged `UISegmentedControl` inside a `UIViewRepresentable` to mimic a tab bar. While it provided UIKit's built-in sliding indicator, it introduced critical limitations that this pure SwiftUI implementation solves:
+
+| Limitation in `UISegmentedControl` | How Current `TabView` Implementation Solves It |
+| :--- | :--- |
+| **Not a Real Navigation Container:** It was an input selector, not a container. It lacked view lifecycle handling, page state preservation, and navigation hierarchies. | **Real `TabView` Architecture:** Uses standard SwiftUI `TabView(selection: $activeTab)` with child navigation stacks and scrollable views. |
+| **Fragile UIKit Subview Hacking:** Relied on tagging `control.subviews.last` and hiding internal `UIImageView`s — undocumented hierarchy that breaks across iOS versions. | **100% Pure SwiftUI:** Powered entirely by declarative SwiftUI (`HStack`, `@Namespace`, `.matchedGeometryEffect`), with zero private UIKit view inspection. |
+| **Rasterized Bitmaps (`ImageRenderer`):** Rendered tab icons into static `UIImage`s at hardcoded `scale = 2`, causing softness on 3x screens and breaking Dynamic Type and dark mode updates. | **Crisp Vector SF Symbols:** Pure SwiftUI `Image(systemName:)` and `Text` that render natively at any screen scale and automatically adapt to system appearances and font settings. |
+| **Accessibility Semantics:** VoiceOver announced the bar as *"Segmented Control, 3 options"* instead of a tab bar. | **Standard Tab Bar Semantics:** Elements are announced with proper tab roles, combined labels, and `.isSelected` traits. |
+| **Hardcoded Segment Mutations:** Adding or removing segments relied on manual UIKit index manipulation (`removeSegment(at: 3, animated: true)`). | **Declarative Tab Set:** Driven by reactive state (`displayedTabs` from `CustomTab`), animating smoothly with SwiftUI springs. |
+
+*(Earlier prototypes are archived for reference in [`Legacy/`](Custom%20tab%20bar%20with%20action%20button/Legacy/)).*
+
+---
+
+## Architecture & Implementation
+
+### 1. [MorphingTabBar.swift](Custom%20tab%20bar%20with%20action%20button/Views/Components/MorphingTabBar.swift)
+The core tab bar component. It renders an `HStack` of tab buttons inside a capsule mask:
+- Displays `CustomTab.homeTabs` (3 tabs) when the action button is visible, and all cases (4 tabs including `.profile`) when the action button is hidden.
+- Tracks `activeTab` with a shared matched geometry capsule (`ACTIVE_TAB_PILL`) that smoothly slides across segments.
+- Uses directional removal transitions and `.clipShape(Capsule())` to ensure exiting tabs collapse cleanly without ghosting into the action button space.
+
+### 2. [ContentView.swift](Custom%20tab%20bar%20with%20action%20button/Views/ContentView.swift)
+The root coordinator:
+- Binds `TabView(selection: $activeTab)` to each tab screen (`Home`, `Notifications`, `Settings`, `Profile`).
+- Hides the native tab bar cleanly on all child views via `.toolbarVisibility(.hidden, for: .tabBar)`.
+- Overlays the floating `customTabBar` wrapped in `GlassEffectContainer`.
+- Slides the action button in/out with trailing edge spring transitions when `activeTab.showsActionButton` changes.
+
+### 3. [CustomTab.swift](Custom%20tab%20bar%20with%20action%20button/Models/CustomTab.swift)
+Defines tab configurations:
+- Tab enumeration (`home`, `notifications`, `settings`, `profile`).
+- Associated SF Symbols (`symbol`) and action button symbols (`actionSymbol`).
+- `showsActionButton` rule (enabled on `.home`).
+
+---
 
 ## Project Structure
 
@@ -42,22 +73,31 @@ Custom tab bar with action button/
 ├── Models/
 │   └── CustomTab.swift                   # Tab items, icons, and action button configuration
 ├── Views/
-│   ├── ContentView.swift                 # Main view with glass container & action button
+│   ├── ContentView.swift                 # TabView navigation container & floating bar overlay
 │   └── Components/
-│       └── MorphingTabBar.swift          # Dynamic UIViewRepresentable segmented control
+│       └── MorphingTabBar.swift          # Pure SwiftUI morphing tab bar with matchedGeometryEffect
 ├── Legacy/
-│   ├── LegacyCustomTabBar.swift          # Archived 3-tab persistent action button prototype
+│   ├── LegacyMorphingTabBar.swift        # Archived UISegmentedControl dynamic prototype
+│   ├── LegacyCustomTabBar.swift          # Archived image-rendered tab bar prototype
 │   └── LegacyOverlayTabBar.swift         # Archived SwiftUI-overlay tab bar prototype
 └── Assets.xcassets/                      # App asset catalog
 ```
+
+---
+
 ## Requirements
 
-- macOS with **Xcode 26** or newer (required for the Liquid Glass APIs used here — `GlassEffectContainer`, `.glassEffect`)
-- iOS **26.1**+ deployment target (simulator or device)
+- macOS with **Xcode 26** or newer
+- **iOS 26.1+** deployment target (for Liquid Glass APIs — `GlassEffectContainer`, `.glassEffect`)
 - Swift 5 toolchain (bundled with Xcode)
-- No external dependencies — pure SwiftUI/UIKit, no Swift Package dependencies
+- Zero external package dependencies (pure native SwiftUI)
+
+---
 
 ## Getting Started
 
-```bash
-open "Custom tab bar with action button.xcodeproj"
+1. Open the project in Xcode:
+   ```bash
+   open "Custom tab bar with action button.xcodeproj"
+   ```
+2. Select an iOS Simulator running iOS 26.1+ and hit **Run (`Cmd+R`)**, or open Canvas Preview in **[ContentView.swift](Custom%20tab%20bar%20with%20action%20button/Views/ContentView.swift)**.

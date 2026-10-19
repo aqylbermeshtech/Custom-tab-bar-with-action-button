@@ -1,112 +1,62 @@
 //
 //  MorphingTabBar.swift
-//  Morphing Tab bar
+//  Custom tab bar with action button
 //
 //  Created by Nurtore on 25.08.2026.
 //
 
 import SwiftUI
 
-struct MorphingTabBar<TabItemView: View>: UIViewRepresentable {
-    var size: CGSize
-    var activeTint: Color = .blue
-    var barTint: Color = .gray.opacity(0.15)
+struct MorphingTabBar: View {
     @Binding var activeTab: CustomTab
-    @ViewBuilder var tabItemView: (CustomTab) -> TabItemView
+    var barTint: Color = .primary.opacity(0.12)
+    @Namespace private var tabAnimation
     
-    private let selectionViewTag = 999
-    
-    func makeCoordinator() -> Coordinator {
-        Coordinator(parent: self)
+    private var displayedTabs: [CustomTab] {
+        activeTab.showsActionButton ? CustomTab.homeTabs : CustomTab.allCases
     }
     
-    func makeUIView(context: Context) -> UISegmentedControl {
-        let initialTabs = activeTab.showsActionButton ? CustomTab.homeTabs : CustomTab.allCases
-        let items = initialTabs.map(\.rawValue)
-        let control = UISegmentedControl(items: items)
-        control.selectedSegmentIndex = min(activeTab.index, initialTabs.count - 1)
-        
-        for (index, tab) in initialTabs.enumerated() {
-            control.setImage(renderImage(for: tab), forSegmentAt: index)
-        }
-        
-        DispatchQueue.main.async {
-            control.subviews.last?.tag = selectionViewTag
-            hideBackgroundImageViews(in: control)
-        }
-        
-        control.selectedSegmentTintColor = UIColor(barTint)
-        control.setTitleTextAttributes([.foregroundColor: UIColor(activeTint)], for: .selected)
-        
-        control.addTarget(
-            context.coordinator,
-            action: #selector(context.coordinator.tabSelected(_:)),
-            for: .valueChanged
-        )
-        return control
-    }
-    
-    func updateUIView(_ uiView: UISegmentedControl, context: Context) {
-        context.coordinator.parent = self
-        
-        if activeTab.showsActionButton {
-            if uiView.selectedSegmentIndex != activeTab.index {
-                uiView.selectedSegmentIndex = activeTab.index
-            }
-            if uiView.numberOfSegments == 4 {
-                uiView.removeSegment(at: 3, animated: true)
-                DispatchQueue.main.async {
-                    hideBackgroundImageViews(in: uiView)
+    var body: some View {
+        HStack(spacing: 4) {
+            ForEach(displayedTabs, id: \.self) { tab in
+                Button {
+                    guard activeTab != tab else { return }
+                    withAnimation(.smooth(duration: 0.45, extraBounce: 0)) {
+                        activeTab = tab
+                    }
+                } label: {
+                    VStack(spacing: 3) {
+                        Image(systemName: tab.symbol)
+                            .font(.system(size: 19, weight: .medium))
+                            .symbolEffect(.bounce, value: activeTab == tab)
+                        
+                        Text(tab.rawValue)
+                            .font(.system(size: 10, weight: .medium))
+                    }
+                    .symbolVariant(activeTab == tab ? .fill : .none)
+                    .foregroundStyle(activeTab == tab ? .primary : .secondary)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .contentShape(.capsule)
+                    .background {
+                        if activeTab == tab {
+                            Capsule()
+                                .fill(barTint)
+                                .matchedGeometryEffect(id: "ACTIVE_TAB_PILL", in: tabAnimation)
+                        }
+                    }
                 }
-            }
-        } else {
-            if uiView.numberOfSegments == 3 {
-                let profileImage = renderImage(for: .profile)
-                uiView.insertSegment(with: profileImage, at: 3, animated: true)
-                DispatchQueue.main.async {
-                    hideBackgroundImageViews(in: uiView)
-                }
-            }
-            if uiView.selectedSegmentIndex != activeTab.index {
-                uiView.selectedSegmentIndex = activeTab.index
+                .buttonStyle(.plain)
+                .transition(.asymmetric(
+                    insertion: .opacity.combined(with: .scale(scale: 0.85)),
+                    removal: .scale(scale: 0.01, anchor: .leading).combined(with: .opacity)
+                ))
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel(tab.rawValue)
+                .accessibilityAddTraits(activeTab == tab ? [.isButton, .isSelected] : [.isButton])
             }
         }
-    }
-    
-    func sizeThatFits(_ proposal: ProposedViewSize, uiView: UISegmentedControl, context: Context) -> CGSize? {
-        return size
-    }
-    
-    private func renderImage(for tab: CustomTab) -> UIImage? {
-        let renderer = ImageRenderer(content: tabItemView(tab))
-        renderer.scale = 2
-        return renderer.uiImage
-    }
-    
-    private func hideBackgroundImageViews(in control: UISegmentedControl) {
-        if !control.subviews.contains(where: { $0.tag == selectionViewTag }) {
-            control.subviews.last?.tag = selectionViewTag
-        }
-        for subview in control.subviews {
-            if subview is UIImageView && subview.tag != selectionViewTag {
-                subview.alpha = 0
-                subview.isHidden = true
-            }
-        }
-    }
-    
-    class Coordinator: NSObject {
-        var parent: MorphingTabBar
-        init(parent: MorphingTabBar) {
-            self.parent = parent
-        }
-        
-        @objc func tabSelected(_ control: UISegmentedControl) {
-            let index = control.selectedSegmentIndex
-            guard CustomTab.allCases.indices.contains(index) else { return }
-            withAnimation(.smooth(duration: 0.55, extraBounce: 0)) {
-                parent.activeTab = CustomTab.allCases[index]
-            }
-        }
+        .padding(4)
+        .clipShape(Capsule())
+        .glassEffect(.regular.interactive(), in: .capsule)
     }
 }
