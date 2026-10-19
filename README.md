@@ -17,25 +17,32 @@ A small SwiftUI experiment: a custom, capsule-shaped tab bar built on top of `UI
 - Rendering each segment's SwiftUI icon/label to a `UIImage` and setting it as the segment's image directly (see [Implementation](#implementation) below)
 - Applying `GlassEffectContainer` / `.glassEffect(.regular.interactive(), in:)` (iOS 26 Liquid Glass API) to both the tab bar and the action button so they visually merge into one floating pill
 - An action button that cross-fades/blurs between per-tab SF Symbols (`blurFade` view modifier) driven by the active tab, animated with `.smooth`
-- Tabs with one obvious primary action (Home, Notifications) get a plain `Button`; a tab with several (Settings) morphs the icon to `ellipsis` and becomes a `Menu` instead — see `CustomTab.hasSingleAction` in [ContentView.swift](Custom%20tab%20bar%20with%20action%20button/ContentView.swift)
+- Tabs can configure their symbols, icons, and action button visibility in [CustomTab.swift](Custom%20tab%20bar%20with%20action%20button/Models/CustomTab.swift).
 
 ## Implementation
 
-**[CustomTabBar.swift](Custom%20tab%20bar%20with%20action%20button/Helpers/CustomTabBar.swift)** is the tab bar used by [ContentView.swift](Custom%20tab%20bar%20with%20action%20button/ContentView.swift). It renders each tab's SwiftUI icon/label to a `UIImage` via `ImageRenderer` and sets it as the segment's image, hides the control's built-in divider images, and only tints the selected-segment background — so visually it reads as a plain glass capsule rather than a stock segmented control.
+**[MorphingTabBar.swift](Custom%20tab%20bar%20with%20action%20button/Views/Components/MorphingTabBar.swift)** is the tab bar used by [ContentView.swift](Custom%20tab%20bar%20with%20action%20button/Views/ContentView.swift). It renders each tab's SwiftUI icon/label to a `UIImage` via `ImageRenderer` and sets it as the segment's image, hides the control's built-in divider images, and tints the selected-segment background — dynamically inserting or removing tabs with fluid animations.
 
-An earlier approach — an empty-titled `UISegmentedControl` with the labels drawn in a SwiftUI `.overlay` on top — is kept for reference at [Helpers/Legacy/CustomTabBar2.swift](Custom%20tab%20bar%20with%20action%20button/Helpers/Legacy/CustomTabBar2.swift) but is no longer wired into `ContentView`.
+Earlier prototype implementations are kept for reference under [Legacy/](Custom%20tab%20bar%20with%20action%20button/Legacy/):
+- **[LegacyCustomTabBar.swift](Custom%20tab%20bar%20with%20action%20button/Legacy/LegacyCustomTabBar.swift)**: Earlier image-rendered prototype.
+- **[LegacyOverlayTabBar.swift](Custom%20tab%20bar%20with%20action%20button/Legacy/LegacyOverlayTabBar.swift)**: Segmented control with SwiftUI overlay labels.
 
 ## Project Structure
 
 ```
 Custom tab bar with action button/
-├── Custom_tab_bar_with_action_buttonApp.swift   # App entry point
-├── ContentView.swift                             # Tab bar + action button layout, CustomTab enum
-├── Helpers/
-│   ├── CustomTabBar.swift                        # Segmented control, image-rendered segments (in use)
-│   └── Legacy/
-│       └── CustomTabBar2.swift                   # Segmented control, SwiftUI overlay segments (archived)
-└── Assets.xcassets/
+├── App/
+│   └── CustomTabBarApp.swift             # App entry point (@main)
+├── Models/
+│   └── CustomTab.swift                   # Tab items, icons, and action button configuration
+├── Views/
+│   ├── ContentView.swift                 # Main view with glass container & action button
+│   └── Components/
+│       └── MorphingTabBar.swift          # Dynamic UIViewRepresentable segmented control
+├── Legacy/
+│   ├── LegacyCustomTabBar.swift          # Archived image-rendered tab bar prototype
+│   └── LegacyOverlayTabBar.swift         # Archived SwiftUI-overlay tab bar prototype
+└── Assets.xcassets/                      # App asset catalog
 ```
 
 ## Requirements
