@@ -2,11 +2,8 @@
 
 # Custom Tab Bar with Action Button
 
-### 1. Expanding 4th Tab Variant
-<img width="458" height="290" alt="Expanding Profile Tab Bar Demo" src="https://github.com/user-attachments/assets/85fde5ed-0171-49bd-a770-673739ea75ea" />
-
-### 2. Persistent Morphing Action Button Variant
-<img width="460" height="416" alt="Morphing Action Button Tab Bar Demo" src="https://github.com/user-attachments/assets/dfebf9e7-fcd7-48b1-9c15-a85f8a781d98" />
+### Implementation
+<img width="444" height="282" alt="Adobe Express - Screen Recording 2026-10-19 at 17 37 05" src="https://github.com/user-attachments/assets/38183d5e-d618-4c89-90fd-6035e19d64a6" />
 
 </div>
 
@@ -27,15 +24,7 @@ A modern, fluid SwiftUI tab bar: a custom capsule-shaped bar built in **pure Swi
 
 ## Transition: From `UISegmentedControl` to Native `TabView`
 
-Earlier versions of this project used a bridged `UISegmentedControl` inside a `UIViewRepresentable` to mimic a tab bar. While it provided UIKit's built-in sliding indicator, it introduced critical limitations that this pure SwiftUI implementation solves:
-
-| Limitation in `UISegmentedControl` | How Current `TabView` Implementation Solves It |
-| :--- | :--- |
-| **Not a Real Navigation Container:** It was an input selector, not a container. It lacked view lifecycle handling, page state preservation, and navigation hierarchies. | **Real `TabView` Architecture:** Uses standard SwiftUI `TabView(selection: $activeTab)` with child navigation stacks and scrollable views. |
-| **Fragile UIKit Subview Hacking:** Relied on tagging `control.subviews.last` and hiding internal `UIImageView`s — undocumented hierarchy that breaks across iOS versions. | **100% Pure SwiftUI:** Powered entirely by declarative SwiftUI (`HStack`, `@Namespace`, `.matchedGeometryEffect`), with zero private UIKit view inspection. |
-| **Rasterized Bitmaps (`ImageRenderer`):** Rendered tab icons into static `UIImage`s at hardcoded `scale = 2`, causing softness on 3x screens and breaking Dynamic Type and dark mode updates. | **Crisp Vector SF Symbols:** Pure SwiftUI `Image(systemName:)` and `Text` that render natively at any screen scale and automatically adapt to system appearances and font settings. |
-| **Accessibility Semantics:** VoiceOver announced the bar as *"Segmented Control, 3 options"* instead of a tab bar. | **Standard Tab Bar Semantics:** Elements are announced with proper tab roles, combined labels, and `.isSelected` traits. |
-| **Hardcoded Segment Mutations:** Adding or removing segments relied on manual UIKit index manipulation (`removeSegment(at: 3, animated: true)`). | **Declarative Tab Set:** Driven by reactive state (`displayedTabs` from `CustomTab`), animating smoothly with SwiftUI springs. |
+Earlier versions of this project used a bridged `UISegmentedControl` inside a `UIViewRepresentable` to mimic a tab bar. While it provided UIKit's built-in sliding indicator, it introduced critical limitations that this pure SwiftUI implementation solves.
 
 *(Earlier prototypes are archived for reference in [`Legacy/`](Custom%20tab%20bar%20with%20action%20button/Legacy/)).*
 
